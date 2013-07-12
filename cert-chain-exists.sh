@@ -14,10 +14,14 @@
 #
 
 #
-# should be in form of "host.fqdn.com:443"
-# ":443" is mandatory (or another port)
+# should be in form of "host.fqdn.com:###" or "host.fqdn.com" (where
+# 443 is assumed)
 #
-export hostport="$1"
+export HOSTPORT="$1"
+if [[ "$HOSTPORT" != ":" ]]
+then
+export HOSTPORT=${HOSTPORT}:443
+fi
 
 # echo "/"
 #   requests the path "/"
@@ -33,7 +37,7 @@ export hostport="$1"
 # | tr -d ' '
 #    strip spaces, since I like being neat and tidy
 #
-export numcerts=`echo / | openssl s_client -showcerts -connect $hostport 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l |  tr -d ' '`
+export numcerts=`echo / | openssl s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l |  tr -d ' '`
 
 if [ "$numcerts" -lt 2 ]; then
   # only 1 cert in chain?
