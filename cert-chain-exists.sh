@@ -40,10 +40,12 @@ fi
 export numcerts=`echo / | openssl s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l |  tr -d ' '`
 
 if [ "$numcerts" -lt 2 ]; then
-  # only 1 cert in chain?
-  #  probably wrong unless you are yahoo.com
-  exit 1;
+    # only 1 cert in chain?
+    #  probably wrong unless you are yahoo.com
+    echo "Certificate Chain < 2: FAIL"
+    exit 1;
 else
-  # at least two certs means we have a chain.  Good.
-  exit 0
+    # at least two certs means we have a chain.  Good.
+    echo "Certificate Chain >= 2: OK"
+    exit 0
 fi

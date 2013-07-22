@@ -23,8 +23,8 @@ echo / | openssl s_client -tls1 -connect $HOSTPORT 2> /dev/null > /dev/null
 
 if [ "$?" -eq "0" ]; then
     echo "TLS v1.0: OK"
-    exit 1
+    exit 0
 else
     echo "TLS v1.0: FAIL"
-    exit 0
+    exit 1
 fi
