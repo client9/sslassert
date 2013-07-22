@@ -18,7 +18,7 @@ export HOSTPORT=${HOSTPORT}:443
 fi
 
 
-echo / | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -q 'Compression: NONE'
+echo / | openssl s_client -connect $HOSTPORT 2> /dev/null | grep 'self signed certificate in certificate chain'
 
 # grep $? is
 #     0     One or more lines were selected.
@@ -26,11 +26,11 @@ echo / | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -q 'Compression
 #     >1    An error occurred.
 
 
-if [ "$?" -eq "0" ]; then
-    echo "SSL Compression: OFF (OK)"
+if [ "$?" -eq "1" ]; then
+    echo "Certificate chain has no self-signed certificates: OK"
     exit 0
 else
     # didn't find "Compression: NONE" so it must be on
-    echo "SSL Compression: ON (FAIL)"
+    echo "Certificate chain has self-signed certificates: FAIL"
     exit 1
 fi
