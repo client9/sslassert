@@ -18,8 +18,7 @@
 # 443 is assumed)
 #
 export HOSTPORT="$1"
-if [[ "$HOSTPORT" != ":" ]]
-then
+if [[ "$HOSTPORT" != *:* ]]; then
 export HOSTPORT=${HOSTPORT}:443
 fi
 
