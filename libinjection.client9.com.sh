@@ -18,3 +18,7 @@ self-signed-certificates-in-chain off
 
 # make sure we make the chain correctly for nginx
 minimum-certificate-chain-length    2
+
+# slow, and only used by IE6
+# note: 3DES is still FIPS compliant!
+triple-des-cipher-suites off
