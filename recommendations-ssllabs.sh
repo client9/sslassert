@@ -18,6 +18,8 @@ then
 export HOSTPORT=${HOSTPORT}:443
 fi
 
+echo "ssl-unit-tests"
+echo "https://github.com/client9/ssl-unit-tests"
 echo ""
 echo "This is not endorsed or recommended by Qualys or ssllabs"
 echo "See https://www.ssllabs.com/ for current recommendations"
