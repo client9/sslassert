@@ -19,7 +19,7 @@ fi
 #
 # connect to 'https://$HOSTPORT/' using tls 1.2
 #
-echo / | openssl s_client -tls1_2 -connect $HOSTPORT 2>1 > /dev/null
+echo / | openssl s_client -tls1_2 -connect $HOSTPORT 2> /devnull > /dev/null
 
 if [ "$?" -eq "0" ]; then
   # ok

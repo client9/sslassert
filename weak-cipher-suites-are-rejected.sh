@@ -19,7 +19,7 @@ fi
 
 WEAK="0"
 for CIPHER in EXP-RC4-MD5 DES-CBC-SHA EXP-DES-CBC-SHA EXP-RC2-CBC-MD5; do
-    echo / | openssl s_client -cipher ${CIPHER} -quiet -connect $HOSTPORT 2>1 > /dev/null
+    echo / | openssl s_client -cipher ${CIPHER} -quiet -connect $HOSTPORT 2>/dev/null > /dev/null
     if [ "$?" -eq "0" ]; then
         echo "$CIPHER : Accepted (FAIL)"
         WEAK="1"
