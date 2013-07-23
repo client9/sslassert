@@ -10,6 +10,9 @@ export URLPATH=/
 # pull in base recommendations
 recommendation-ssllabs
 
+# only IE6 and some dumb phones use ssl-v3
+protocol-ssl-v3      off
+
 # don't include self-signed certs
 self-signed-certificates-in-chain off
 
