@@ -26,9 +26,9 @@ echo / | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Secure R
 #     >1    An error occurred.
 
 if [ "$?" -eq "0" ]; then
-    echo "Secure Renegotiation: on (OK)"
+    echo "Secure Renegotiation is on: OK"
     exit 0
 else
-    echo "Secure Renegotiation: off (FAIL)"
+    echo "Secure Renegotiation is off: FAIL"
     exit 1
 fi

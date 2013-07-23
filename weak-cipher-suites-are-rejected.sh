@@ -29,9 +29,9 @@ for CIPHER in EXP-RC4-MD5 DES-CBC-SHA EXP-DES-CBC-SHA EXP-RC2-CBC-MD5; do
 done
 
 if [ "$WEAK" -eq "0" ]; then
-    echo "Weak Cipher Suites are Rejected: OK"
+    echo "Weak Cipher Suites are rejected: OK"
     exit 0
 else
-    echo "Weak Cipher Suites are Accepted: FAIL"
+    echo "Weak Cipher Suites are accepted: FAIL"
     exit 1
 fi
