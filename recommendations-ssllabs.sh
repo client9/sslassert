@@ -18,6 +18,7 @@ then
 export HOSTPORT=${HOSTPORT}:443
 fi
 
+echo ""
 echo "ssl-unit-tests"
 echo "https://github.com/client9/ssl-unit-tests"
 echo ""
