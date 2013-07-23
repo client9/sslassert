@@ -26,10 +26,10 @@ echo / | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -q 'Compression
 
 
 if [ "$?" -eq "0" ]; then
-    echo "SSL Compression is off: OK"
+    echo "SSL compression is off: OK"
     exit 0
 else
     # didn't find "Compression: NONE" so it must be on
-    echo "SSL Compression is on: FAIL"
+    echo "SSL compression is on: FAIL"
     exit 1
 fi
