@@ -231,6 +231,74 @@ function weak-cipher-suites {
 
 }
 
+
+function has-cipher-suites {
+    EXPECTED=$1
+    FNAME=$2
+    SUITES=$3
+    ANY=0
+    for CIPHER in ${SUITES[*]}; do
+        echo $URLPATH | openssl s_client -cipher ${CIPHER} -quiet -connect $HOSTPORT 2> /dev/null > /dev/null
+        if [ "$?" -eq "0" ]; then
+            ACTUAL="on"
+            ANY=1
+        else
+            ACTUAL="off"
+        fi
+        if [ "$EXPECTED" == "$ACTUAL" ]; then
+            RESULT="PASS"
+        else
+            RESULT="FAIL"
+        fi
+        echo "$RESULT: $FNAME $CIPHER is $ACTUAL"
+    done
+    return $ANY
+}
+
+function weak-cipher-suites {
+
+    EXPECTED=$1
+    FNAME=$FUNCNAME
+    SUITES=(\
+        EXP-RC4-MD5 \
+        EXP-RC2-CBC-MD5 \
+        EXP-DES-CBC-SHA \
+        EXP-EDH-DSS-DES-CBC-SHA \
+        EXP-EDH-RSA-DES-CBC-SHA \
+        DES-CBC-SHA \
+        EDH-DSS-DES-CBC-SHA \
+        EDH-RSA-DES-CBC-SHA \
+        )
+
+    has-cipher-suites $EXPECTED $FNAME $SUITES
+}
+
+
+function triple-des-cipher-suites {
+
+    EXPECTED=$1
+    FNAME=$FUNCNAME
+    SUITES=(\
+        ECDHE-RSA-DES-CBC3-SHA \
+        ECDHE-ECDSA-DES-CBC3-SHA \
+        SRP-DSS-3DES-EDE-CBC-SHA \
+        SRP-RSA-3DES-EDE-CBC-SHA \
+        EDH-RSA-DES-CBC3-SHA \
+        EDH-DSS-DES-CBC3-SHA \
+        AECDH-DES-CBC3-SHA \
+        SRP-3DES-EDE-CBC-SHA \
+        ECDH-RSA-DES-CBC3-SHA \
+        ECDH-ECDSA-DES-CBC3-SHA \
+        DES-CBC3-SHA \
+        DES-CBC3-MD5 \
+        PSK-3DES-EDE-CBC-SHA \
+        )
+
+    has-cipher-suites $EXPECTED $FNAME $SUITES
+}
+
+
+
 function recommendation-ssllabs {
     secure-renegotiation on
     protocol-ssl-v2     off
