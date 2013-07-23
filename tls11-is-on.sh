@@ -18,7 +18,7 @@ fi
 #
 # connect to 'https://$HOSTPORT/' using tls 1.1
 #
-echo / | openssl s_client -tls1_1 -connect $HOSTPORT 2>/dev/null > /dev/null
+echo / | openssl s_client -tls1_1 -connect $HOSTPORT 2> /dev/null > /dev/null
 
 if [ "$?" -eq "0" ]; then
   echo "TLS v1.1 is on: OK"
