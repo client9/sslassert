@@ -36,16 +36,17 @@ fi
 #    count them
 # | tr -d ' '
 #    strip spaces, since I like being neat and tidy
+#    this is needed for Mac OSX / BSD(?) `wc -l`
 #
 export numcerts=`echo / | openssl s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l |  tr -d ' '`
 
 if [ "$numcerts" -lt 2 ]; then
     # only 1 cert in chain?
     #  probably wrong unless you are yahoo.com
-    echo "Certificate Chain < 2: FAIL"
+    echo "Certificate Chain Length $numcerts < 2: FAIL"
     exit 1;
 else
     # at least two certs means we have a chain.  Good.
-    echo "Certificate Chain >= 2: OK"
+    echo "Certificate Chain Length $numcerts >= 2: OK"
     exit 0
 fi
