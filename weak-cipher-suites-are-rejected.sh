@@ -17,8 +17,17 @@ export HOSTPORT=${HOSTPORT}:443
 fi
 
 WEAK="0"
-for CIPHER in EXP-RC4-MD5 DES-CBC-SHA EXP-DES-CBC-SHA EXP-RC2-CBC-MD5; do
-    echo / | openssl s_client -cipher ${CIPHER} -quiet -connect $HOSTPORT 2>/dev/null > /dev/null
+for CIPHER in \
+    EXP-RC4-MD5 \
+    EXP-RC2-CBC-MD5 \
+    EXP-DES-CBC-SHA \
+    EXP-EDH-DSS-DES-CBC-SHA \
+    EXP-EDH-RSA-DES-CBC-SHA \
+    DES-CBC-SHA \
+    EDH-DSS-DES-CBC-SHA \
+    EDH-RSA-DES-CBC-SHA \
+    ; do
+    echo / | openssl s_client -cipher ${CIPHER} -quiet -connect $HOSTPORT 2> /dev/null > /dev/null
     if [ "$?" -eq "0" ]; then
         echo "Weak cipher suite $CIPHER is accepted: FAIL"
         WEAK="1"
