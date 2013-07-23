@@ -23,8 +23,10 @@ echo / | openssl s_client -ssl2 -connect $HOSTPORT 2> /dev/null > /dev/null
 
 if [ "$?" -eq "1" ]; then
   # we could NOT connect, sslv2 is off, good
-  exit 0
+    echo "SSL v2 is OFF:  OK"
+    exit 0
 else
-  # we connected under SSLv2, fail
-  exit 1
+    # we connected under SSLv2, fail
+    echo "SSL v2 is ON:  FAIL"
+    exit 1
 fi
