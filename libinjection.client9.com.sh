@@ -1,24 +1,24 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Sample to see how this works
 #
-source https-unit-tests.sh
 
 export HOSTPORT=libinjection.client9.com:443
 export URLPATH=/
 
-# pull in base recommendations
-recommendation-ssllabs
+source sslassert.sh
 
-# only IE6 and some dumb phones use ssl-v3
-protocol-ssl-v3      off
+echo ""
 
-# don't include self-signed certs
-self-signed-certificates-in-chain off
+recommendation_ssllabs
 
-# make sure we make the chain correctly for nginx
-minimum-certificate-chain-length    2
+# only IE6 and some dumb phones use ssl_v3
+sslassert "protocol-SSL-v3            = off"
+sslassert "certificate-chain-length -gt 1"
+sslassert "crypto-camellia            = off"
+sslassert "crypto-3des                = off"
+sslassert "crypto-md5                 = off"
+sslassert "beast-attack               = off"
 
-# slow, and only used by IE6
-# note: 3DES is still FIPS compliant!
-triple-des-cipher-suites off
+echo ""
+
