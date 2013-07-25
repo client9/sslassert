@@ -6,7 +6,7 @@
 export HOSTPORT=libinjection.client9.com:443
 export URLPATH=/
 
-source sslassert.sh
+source ./sslassert.sh
 
 echo ""
 
