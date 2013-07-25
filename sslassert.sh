@@ -20,7 +20,7 @@ function sslfact_add {
     if [ "$SSLASSERT_DEBUG" != "" ]; then
         echo $FACT 2>&1
     fi
-    SSLFACTS="$SSLFACTS\n$FACT"
+    SSLFACTS="${SSLFACTS}\n${FACT}"
 }
 
 function sslfact_certificate_length {
@@ -123,7 +123,7 @@ function sslfact_protocol_ssl_v3 {
 
 function sslfact_protocol_ssl_v2 {
     cipher=`echo $URLPATH | openssl s_client -ssl2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
-    if [ "$cipher" -eq "0000" ]; then
+    if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
         ACTUAL="on"
@@ -213,17 +213,6 @@ function sslfact_beast_attack {
     fi
     sslfact_add "beast-attack: ${ACTUAL}"
 }
-
-function recommendation_ssllabs {
-    sslassert 'secure-renegotiation = on'
-    sslassert 'protocol-SSL-v2      = off'
-    sslassert 'protocol-TLS-V10     = on'
-    sslassert 'crypto-weak          = off'
-    sslassert 'compression          = off'
-    sslassert 'beast-attack         = off'
-    sslassert 'certificate-length -ge 1024'
-}
-
 
 function sslassert {
     read -r KEY OP EXPECTED <<< $1
