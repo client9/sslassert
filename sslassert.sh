@@ -20,7 +20,8 @@ function sslfact_add {
     if [ "$SSLASSERT_DEBUG" != "" ]; then
         echo $FACT 2>&1
     fi
-    SSLFACTS="${SSLFACTS}\n${FACT}"
+    SSLFACTS="${SSLFACTS}
+${FACT}"
 }
 
 function sslfact_certificate_length {
@@ -133,7 +134,7 @@ function sslfact_protocol_ssl_v2 {
 }
 
 function sslfact_cipher_suites {
-    OPENSSLSUITES=`openssl ciphers -V | awk '{ print $3 }'`
+    OPENSSLSUITES=`openssl ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }'`
     for CIPHER in $OPENSSLSUITES; do
         echo $URLPATH | openssl s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
         if [ "$?" -eq "0" ]; then
@@ -156,53 +157,63 @@ function has_cipher_suites {
 }
 
 function sslfact_crypto_weak {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -c -E 'EXP-|-DES-CBC-'`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c -E 'EXP-|-DES-CBC-'`
     has_cipher_suites "crypto-weak" $COUNT
 }
 
+function sslfact_crypto_null {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'NULL-'`
+    has_cipher_suites "crypto-null" $COUNT
+}
+
+function sslfact_crypto_adh {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'ADH-'`
+    has_cipher_suites "crypto-adh" $COUNT
+}
+
 function sslfact_crypto_idea {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite.*: on' | grep -c IDEA-`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite.*: on' | grep -c IDEA-`
     has_cipher_suites "crypto-idea" $COUNT
 }
 
 function sslfact_crypto_rc4 {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -c RC4`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c RC4`
     has_cipher_suites "crypto-rc4" $COUNT
 }
 
 function sslfact_crypto_tripledes {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -c -E '3DES|CBC3'`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c -E '3DES|CBC3'`
     has_cipher_suites "crypto-3des" $COUNT
 }
 
 function sslfact_crypto_camellia {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -c CAMELLIA`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c CAMELLIA`
     has_cipher_suites "crypto-camellia" $COUNT
 }
 
 function sslfact_crypto_md5 {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -c MD5`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c MD5`
     has_cipher_suites 'crypto-md5' $COUNT
 }
 
 function sslfact_crypto_sha160 {
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep SHA | grep -c -v -E 'SHA256|SHA384|SHA512'`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep SHA | grep -c -v -E 'SHA256|SHA384|SHA512'`
     has_cipher_suites 'crypto-sha160' $COUNT
 }
 
 function sslfact_crypto_forward_secrecy {
     # ignoring insecure DES based suites
-    COUNT=`echo $SSLFACTS | grep -i 'cipher-suite-.*: on' | grep -E 'ECDHE|EDH-' | grep -c -v 'DES-CBC-'`
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -E 'ECDHE|EDH-' | grep -c -v 'DES-CBC-'`
     has_cipher_suites 'crypto-forward-secrecy' $COUNT
 }
 
 function sslfact_beast_attack {
     BEAST=0
-    echo $SSLFACTS | grep -i -q -E 'protocol-tls-v10-default:.*(RC4|0000)'
+    echo "$SSLFACTS" | grep -i -q -E 'protocol-tls-v10-default:.*(RC4|0000)'
     if [ "$?" -eq 0 ]; then
         let BEAST+=1
     fi
-    echo $SSLFACTS | grep -i -q -E 'protocol-ssl-v3-default:.*(RC4|0000)'
+    echo "$SSLFACTS" | grep -i -q -E 'protocol-ssl-v3-default:.*(RC4|0000)'
     if [ "$?" -eq 0 ]; then
         let BEAST+=1
     fi
@@ -218,7 +229,7 @@ function sslassert {
     read -r KEY OP EXPECTED <<< $1
 
     # take only first value
-    ACTUAL=`echo $SSLFACTS | grep -i "$KEY" | head -1 | awk -F : '{ print \$2 }' | tr -d ' '`
+    ACTUAL=`echo "$SSLFACTS" | grep -i "$KEY" | head -1 | awk -F : '{ print \$2 }' | tr -d ' '`
 
     if [ "$?" -ne 0 ]; then
         echo "ERR : ${KEY}: not found!!"
@@ -238,6 +249,8 @@ function sslassert {
 function sslassert_init {
     sslfact_cipher_suites
     sslfact_crypto_weak
+    sslfact_crypto_null
+    sslfact_crypto_adh
     sslfact_crypto_md5
     sslfact_crypto_rc4
     sslfact_crypto_idea

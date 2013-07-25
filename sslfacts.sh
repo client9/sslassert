@@ -4,5 +4,5 @@ export HOSTPORT="${1}:443"
 export URLPATH=/
 echo "https://${HOSTPORT}${URLPATH}"
 
-source sslassert.sh
+source ./sslassert.sh
 
