@@ -134,7 +134,7 @@ function sslfact_protocol_ssl_v2 {
 }
 
 function sslfact_cipher_suites {
-    OPENSSLSUITES=`openssl ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }'`
+    OPENSSLSUITES=`openssl ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
     for CIPHER in $OPENSSLSUITES; do
         echo $URLPATH | openssl s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
         if [ "$?" -eq "0" ]; then
@@ -171,6 +171,18 @@ function sslfact_crypto_adh {
     has_cipher_suites "crypto-adh" $COUNT
 }
 
+function sslfact_crypto_aes {
+    # plain aes, no ecdhe- or dh-... aes
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep 'AES' | grep -c -v 'DHE`
+    has_cipher_suites "crypto-aes" $COUNT
+}
+
+function sslfact_crypto_gcm {
+    # plain aes, no ecdhe- or dh-... aes
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'GCM'`
+    has_cipher_suites "crypto-gcm" $COUNT
+}
+
 function sslfact_crypto_idea {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite.*: on' | grep -c IDEA-`
     has_cipher_suites "crypto-idea" $COUNT
@@ -201,10 +213,38 @@ function sslfact_crypto_sha160 {
     has_cipher_suites 'crypto-sha160' $COUNT
 }
 
+function sslfact_crypto_seed {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c SEED`
+    has_cipher_suites 'crypto-seed' $COUNT
+}
+
+function sslfact_crypto_suite_count {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | wc -l | tr -d ' '`
+    sslfact_add "crypto-suite-count: ${COUNT}"
+}
+
 function sslfact_crypto_forward_secrecy {
     # ignoring insecure DES based suites
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -E 'ECDHE|EDH-' | grep -c -v 'DES-CBC-'`
     has_cipher_suites 'crypto-forward-secrecy' $COUNT
+}
+
+function sslfact_crypto_ecdhe {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c  ECDHE`
+    has_cipher_suites 'crypto-ecdhe' $COUNT
+}
+
+function sslfact_crypto_dhe {
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -v ECDHE | grep -c DHE`
+    has_cipher_suites 'crypto-dhe' $COUNT
+}
+
+function sslfact_crypto_winxp {
+    # technically RC4-SHA and RC4-MD5 are ok for Windows XP and IE <=8 too
+    # however, WinXP can be put in FIPS compliance mode, which will eliminate
+    # RC4-SHA, RC4-MD5.  This only leaves DES-CBC3-SHA  :-(
+    COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c DES-CBC3-SHA`
+    has_cipher_suites 'crypto-winxp-ie-compatible' $COUNT
 }
 
 function sslfact_beast_attack {
@@ -253,11 +293,17 @@ function sslassert_init {
     sslfact_crypto_adh
     sslfact_crypto_md5
     sslfact_crypto_rc4
+    sslfact_crypto_gcm
     sslfact_crypto_idea
+    sslfact_crypto_seed
+    sslfact_crypto_dhe
+    sslfact_crypto_ecdhe
     sslfact_crypto_camellia
     sslfact_crypto_tripledes
     sslfact_crypto_forward_secrecy
     sslfact_crypto_sha160
+    sslfact_crypto_winxp
+    sslfact_crypto_suite_count
     sslfact_certificate_length
     sslfact_self_signed_certificates_in_chain
     sslfact_certificate_chain_length

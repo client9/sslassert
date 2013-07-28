@@ -19,8 +19,11 @@ sslassert "crypto-weak                = off"
 sslassert "crypto-null                = off"
 sslassert "crypto-adh                 = off"
 sslassert "crypto-camellia            = off"
+sslassert "crypto-seed                = off"
+sslassert "crypto-idea                = off"
 sslassert "crypto-3des                = off"
 sslassert "crypto-md5                 = off"
+sslassert 'crypto-winxp-ie-compatible = on'
 sslassert "beast-attack               = off"
 sslassert "self-signed-certificates-in-chain = off"
 
