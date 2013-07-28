@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ "$OPENSSL" = "" ]; then
+    OPENSSL="openssl"
+fi
+
 function suites {
 TAG=$1
 if [ "$SUITES" = "" ]; then
@@ -7,7 +11,7 @@ if [ "$SUITES" = "" ]; then
 else
   SUITES="${SUITES}:$1"
 fi
-echo `openssl ciphers -v "${SUITES}" | wc -l` $SUITES
+echo `${OPENSSL} ciphers -v "${SUITES}" | wc -l` $SUITES
 echo ""
 #openssl ciphers -v "${SUITES}" | sort
 }
@@ -20,7 +24,7 @@ if [ "$GREP" = "" ]; then
 else
    GREP="${GREP}|${TAG}"
 fi
-echo `openssl ciphers -v "${SUITES}" | grep -v -E "${GREP}" | wc -l` $SUITES "| grep -v -E $GREP"
+echo `OPENSSL ciphers -v "${SUITES}" | grep -v -E "${GREP}" | wc -l` $SUITES "| grep -v -E $GREP"
 echo ""
 }
 
@@ -83,7 +87,7 @@ echo "a preference."
 suites2 ECDHE-RSA-RC4-SHA
 suites2 ECDHE-RSA-DES-CBC3-SHA
 
-openssl ciphers -v "${SUITES}" | grep -v -E "${GREP}" | sort
+${OPENSSL} ciphers -v "${SUITES}" | grep -v -E "${GREP}" | sort
 
 
 echo ""
