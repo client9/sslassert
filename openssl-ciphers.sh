@@ -24,7 +24,7 @@ if [ "$GREP" = "" ]; then
 else
    GREP="${GREP}|${TAG}"
 fi
-echo `OPENSSL ciphers -v "${SUITES}" | grep -v -E "${GREP}" | wc -l` $SUITES "| grep -v -E $GREP"
+echo `${OPENSSL} ciphers -v "${SUITES}" | grep -v -E "${GREP}" | wc -l` $SUITES "| grep -v -E $GREP"
 echo ""
 }
 
