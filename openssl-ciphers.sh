@@ -66,6 +66,8 @@ suites "!CAMELLIA"
 echo "Removing PreShared Keys suites"
 suites "!PSK"
 
+echo "Removing Kerberos"
+suites "!KRB5"
 echo "Removing ephemeral DH key agreement 'DHE-'.  Very slow and other alternatives exist now"
 suites "!kEDH"
 
