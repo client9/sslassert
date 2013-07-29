@@ -7,7 +7,7 @@
 export HOSTPORT=online.citibank.com
 export URLPATH=/US/JPS/portal/Index.do
 
-source sslassert.sh
+source ./sslassert.sh
 
 sslassert 'secure-renegotiation               = on'
 sslassert 'compression                        = off'

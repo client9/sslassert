@@ -137,6 +137,27 @@ function sslfact_protocol_ssl_v2 {
     sslfact_add "protocol-ssl-v2-default: ${cipher}"
 }
 
+# re: https://community.qualys.com/blogs/securitylabs/2011/10/17/mitigating-the-beast-attack-on-tls
+# Update (20 Jan 2012): In testing OpenSSL 1.0.1-beta2, which came out
+# yesterday, I realised that it will happily negotiate AES-CBC-SHA256
+# even on a TLSv1.0 connection. So I removed it from the
+# recommendation, replacing it with two other TLSv1.2 cipher suites.
+#
+# It appears more modern releases do not have this bug
+#
+# This should be OFF
+#
+function sslfact_tls12_suite_allowed_on_tls10 {
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1 -cipher AES128-SHA256 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    if [ "$cipher" = "0000" ]; then
+        ACTUAL="off"
+    else
+        ACTUAL="on"
+    fi
+    sslfact_add "protocol-tls12-suite-allowed-on-tls10: ${ACTUAL}"
+}
+
+
 function sslfact_cipher_suites {
     OPENSSLSUITES=`${OPENSSL} ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
     for CIPHER in $OPENSSLSUITES; do
@@ -318,6 +339,7 @@ function sslassert_init {
     sslfact_protocol_tls_v10
     sslfact_protocol_ssl_v2
     sslfact_protocol_ssl_v3
+    sslfact_tls12_suite_allowed_on_tls10
     sslfact_beast_attack
 }
 sslassert_init

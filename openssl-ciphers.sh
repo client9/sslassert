@@ -80,8 +80,11 @@ suites2 'SRP-'
 echo "Removing ECDH-, not needed as better faster alternative exists ECDHE-RSA"
 suites2 'ECDH-'
 
-echo "Removing ECDHE-ECDSA-, not needed as better faster alternative exists ECDHE-RSA"
+echo "Removing ECDHE-ECDSA-, while faster than ECDHE-RSA, it requires a special certificate that you don't have"
 suites2 'ECDHE-ECDSA-'
+
+#echo "Removing ECDHE-RSA-, not needed as better faster alternative exists ECDHE-RSA"
+#suites2 'ECDHE-RSA-'
 
 echo "Removing oddsballs ECDHE-RSA-RC4-SHA and ECDHE-RSA-DES-CBC3-SHA."
 echo "I'm not sure how these would ever be selected, or what client would make them"

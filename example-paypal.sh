@@ -3,10 +3,10 @@
 # Sample to see how this works
 #
 
-export HOSTPORT=www.paypal.com:443
+export HOSTPORT=www.paypal.com
 export URLPATH=/
 
-source sslassert.sh
+source ./sslassert.sh
 
 
 sslassert 'secure-renegotiation               = on'
@@ -24,3 +24,5 @@ sslassert 'crypto-3des                        = on'
 sslassert 'crypto-md5                         = on'
 sslassert 'crypto-rc4                         = on'
 sslassert 'certificate-chain-length          -gt 1'
+
+exit $SSLASSERT_EXIT
