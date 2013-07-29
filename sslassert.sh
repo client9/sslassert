@@ -3,6 +3,10 @@
 #
 # defaults
 #
+if [ "$OPENSSL" = "" ]; then
+    export OPENSSL="openssl"
+fi
+
 if [ "$URLPATH" = "" ]; then
     export URLPATH=/
 fi
@@ -25,12 +29,12 @@ ${FACT}"
 }
 
 function sslfact_certificate_length {
-    bits=`echo $URLPATH | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -E 'Server public key is ([0-9]+) bit' |  awk '{ print $5 }'`
+    bits=`echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -E 'Server public key is ([0-9]+) bit' |  awk '{ print $5 }'`
     sslfact_add "certificate-length: $bits"
 }
 
 function sslfact_self_signed_certificates_in_chain {
-    echo $URLPATH | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'self signed certificate in certificate chain'
+    echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'self signed certificate in certificate chain'
     if [ "$?" -eq "0" ]; then
         ACTUAL="on"
     else
@@ -40,12 +44,12 @@ function sslfact_self_signed_certificates_in_chain {
 }
 
 function sslfact_certificate_chain_length {
-    numcerts=`echo $URLPATH | openssl s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l | tr -d ' '`
+    numcerts=`echo $URLPATH | ${OPENSSL} s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l | tr -d ' '`
     sslfact_add "certificate-chain-length: $numcerts"
 }
 
 function sslfact_secure_renegotiation {
-    echo $URLPATH | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Secure Renegotiation IS supported'
+    echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Secure Renegotiation IS supported'
     # grep $? is
     #     0     One or more lines were selected.
     #     1     No lines were selected.
@@ -63,7 +67,7 @@ function sslfact_secure_renegotiation {
 function sslfact_compression {
     EXPECTED=$1
 
-    echo $URLPATH | openssl s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Compression: NONE'
+    echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Compression: NONE'
 
     # grep $? is
     #     0     One or more lines were selected.
@@ -79,7 +83,7 @@ function sslfact_compression {
 }
 
 function sslfact_protocol_tls_v12 {
-    cipher=`echo $URLPATH | openssl s_client -tls1_2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1_2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
@@ -90,7 +94,7 @@ function sslfact_protocol_tls_v12 {
 }
 
 function sslfact_protocol_tls_v11 {
-    cipher=`echo $URLPATH | openssl s_client -tls1_1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1_1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
@@ -101,7 +105,7 @@ function sslfact_protocol_tls_v11 {
 }
 
 function sslfact_protocol_tls_v10 {
-    cipher=`echo $URLPATH | openssl s_client -tls1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
@@ -112,7 +116,7 @@ function sslfact_protocol_tls_v10 {
 }
 
 function sslfact_protocol_ssl_v3 {
-    cipher=`echo $URLPATH | openssl s_client -ssl3 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -ssl3 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
@@ -123,7 +127,7 @@ function sslfact_protocol_ssl_v3 {
 }
 
 function sslfact_protocol_ssl_v2 {
-    cipher=`echo $URLPATH | openssl s_client -ssl2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
+    cipher=`echo $URLPATH | ${OPENSSL} s_client -ssl2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
     else
@@ -134,9 +138,9 @@ function sslfact_protocol_ssl_v2 {
 }
 
 function sslfact_cipher_suites {
-    OPENSSLSUITES=`openssl ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
+    OPENSSLSUITES=`${OPENSSL} ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
     for CIPHER in $OPENSSLSUITES; do
-        echo $URLPATH | openssl s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
+        echo $URLPATH | ${OPENSSL} s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
         if [ "$?" -eq "0" ]; then
             sslfact_add "cipher-suite-${CIPHER}: on"
         else
