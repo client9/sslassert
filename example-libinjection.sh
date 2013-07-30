@@ -18,7 +18,7 @@ sslassert 'protocol-tls12-suite-allowed-on-tls10 = off'
 sslassert "compression                = off"
 sslassert "certificate-chain-length -gt 1"
 sslassert "self-signed-certificates-in-chain = off"
-
+sslassert "crypto-suite-count                     -eq 16"
 sslassert "cipher-suite-ECDHE-RSA-AES128-GCM-SHA256 = on"
 sslassert "cipher-suite-ECDHE-RSA-AES256-GCM-SHA384 = on"
 sslassert "cipher-suite-ECDHE-RSA-AES128-SHA256     = on"

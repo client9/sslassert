@@ -68,33 +68,36 @@ suites "!PSK"
 
 echo "Removing Kerberos"
 suites "!KRB5"
-echo "Removing ephemeral DH key agreement 'DHE-'.  Very slow and other alternatives exist now"
-suites "!kEDH"
+
+echo "Removing SRP key exchange. Originally designed to work around RSA patents.:"
+suites '!SRP'
+
+#echo "Removing Old Ephemeral DH key agreement 'EDH-'.  Very slow, poor cipher support  and other alternatives exist now"
+#suites "!kEDH"
+
+echo "Removing Au=DSS, requires cert you don't have"
+suites '!DSS'
+
+echo "Removing Au-ECDSA-, it requires a special certificate that you don't have"
+suites '!ECDSA'
 
 echo "Unfortunately, this as far as we can go using the OpenSSL tokens."
 echo "Need to grep out what we want"
 
-echo "Removing SRP key exchange. Originally designed to work around RSA patents.:"
-suites2 'SRP-'
 
-echo "Removing ECDH-, not needed as better faster alternative exists ECDHE-RSA"
+echo "Removing ECDH-, not needed as ECDHE is likely a better choice if using DH"
 suites2 'ECDH-'
 
-echo "Removing ECDHE-ECDSA-, while faster than ECDHE-RSA, it requires a special certificate that you don't have"
-suites2 'ECDHE-ECDSA-'
 
-#echo "Removing ECDHE-RSA-, not needed as better faster alternative exists ECDHE-RSA"
-#suites2 'ECDHE-RSA-'
 
-echo "Removing oddsballs ECDHE-RSA-RC4-SHA and ECDHE-RSA-DES-CBC3-SHA."
-echo "I'm not sure how these would ever be selected, or what client would make them"
-echo "a preference."
-suites2 ECDHE-RSA-RC4-SHA
-suites2 ECDHE-RSA-DES-CBC3-SHA
+#echo "Removing oddsball ECDHE-RSA-DES-CBC3-SHA."
+#echo "I'm not sure how it would ever be selected, or what client would make them"
+#echo "a preference."
+#suites2 ECDHE-RSA-DES-CBC3-SHA
 
 ${OPENSSL} ciphers -v "${SUITES}" | grep -v -E "${GREP}" | sort
 
 
 echo ""
-echo "Google uses the same set, the two oddballs, plus RC4-MD5."
-echo "Not clear why"
+echo "Google uses the same set, plus RC4-MD5 (why?)"
+echo ""
