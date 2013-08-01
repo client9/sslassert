@@ -102,8 +102,10 @@ Micro-bench marking tools: https://github.com/vincentbernat/ssl-dos/blob/master/
 
 Good information on Google's implementation of ECDHE
 
+* ECDHE-RSA-RC4-SHA default cipher for Google.
 * constant-time implementations of P-224, P-256 and P-521 for OpenSSL
 * OpenSSL 1.0.0e fixes a lot of bugs
+* P-256 estimate to be equivalent of 3248-bit RSA key
 
 [Protecting Data for the Long Term](http://googleonlinesecurity.blogspot.jp/2011/11/protecting-data-for-long-term-with.html) 2011-11-11
 
@@ -113,6 +115,10 @@ Google's annoucment on forward secrecy.
 > Google HTTPS sites. There's nothing Chrome or Firefox specific on the
 > server side. A browser that supports only DHE-RC4-SHA will *not* get
 > forward secrecy because we don't support EDH for speed reasons.
+
+Summary:
+* Explicitly mentioned that "IE doesn’t support the combination of ECDHE and RC4"
+* Comments add that "EDH-" ..?
 
 [SSL computational DoS mitigation](http://vincent.bernat.im/en/blog/2011-ssl-dos-mitigation.html) 2011
 
