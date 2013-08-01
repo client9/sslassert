@@ -46,14 +46,19 @@ function sslfact_smoke_test {
     fi
 }
 
-function sslfact_self_signed_certificates_in_chain {
+function sslfact_certificate_common_name {
+    output=`echo "/" | openssl s_client -connect $HOSTPORT 2> /dev/null | grep 'CN' | head -1 | awk -F '=' '{ x = split($0,a); printf a[x]; }'`
+    sslfact_add "certificate-common-name: ${output}"
+}
+
+function sslfact_certificate_chain_self_signed {
     echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'self signed certificate in certificate chain'
     if [ "$?" -eq "0" ]; then
         ACTUAL="on"
     else
         ACTUAL="off"
     fi
-    sslfact_add "self-signed-certificates-in-chain: $ACTUAL"
+    sslfact_add "certificate-chain-self-signed: $ACTUAL"
 }
 
 function sslfact_certificate_chain_length {
@@ -370,6 +375,11 @@ function sslassert_init {
     if [ "$?" -eq "1" ]; then
         return $SSLASSERT_EXIT
     fi
+    sslfact_certificate_common_name
+    sslfact_certificate_length
+    sslfact_certificate_chain_length
+    sslfact_certificate_chain_self_signed
+
     sslfact_protocol_tls_v12
     sslfact_protocol_tls_v11
     sslfact_protocol_tls_v10
@@ -394,9 +404,7 @@ function sslassert_init {
     sslfact_crypto_sha160
     sslfact_crypto_winxp
     sslfact_crypto_suite_count
-    sslfact_certificate_length
-    sslfact_self_signed_certificates_in_chain
-    sslfact_certificate_chain_length
+
     sslfact_secure_renegotiation
     sslfact_compression
     sslfact_tls12_suite_allowed_on_tls10
