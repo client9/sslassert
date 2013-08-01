@@ -217,8 +217,8 @@ function sslfact_cipher_suites {
         echo $URLPATH | ${OPENSSL} s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
         if [ "$?" -eq "0" ]; then
             sslfact_add "cipher-suite-${CIPHER}: on"
-        else
-            sslfact_add "cipher-suite-${CIPHER}: off"
+#        else
+#            sslfact_add "cipher-suite-${CIPHER}: off"
         fi
         shift
     done
