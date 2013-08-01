@@ -33,6 +33,19 @@ function sslfact_certificate_length {
     sslfact_add "certificate-length: $bits"
 }
 
+function sslfact_smoke_test {
+    output=`echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2>&1`
+    if [ "$?" -eq "0" ]; then
+        ACTUAL='on'
+        sslfact_add "smoke-test: $ACTUAL"
+    else
+        echo "smoke-test: off"
+        echo "${output}"
+        SSLASSERT_EXIT=1;
+        return 1
+    fi
+}
+
 function sslfact_self_signed_certificates_in_chain {
     echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'self signed certificate in certificate chain'
     if [ "$?" -eq "0" ]; then
@@ -312,6 +325,10 @@ function sslassert {
 }
 
 function sslassert_init {
+    sslfact_smoke_test
+    if [ "$?" -eq "1" ]; then
+        return $SSLASSERT_EXIT
+    fi
     sslfact_cipher_suites
     sslfact_crypto_weak
     sslfact_crypto_null

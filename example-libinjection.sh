@@ -9,6 +9,7 @@ export URLPATH=/
 source ./sslassert.sh
 
 echo ""
+sslassert "smoke-test                 = on"
 sslassert "protocol-ssl-v2            = off"
 sslassert "protocol-ssl-v3            = on"
 sslassert "protocol-tls-v10           = on"
