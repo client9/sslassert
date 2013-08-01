@@ -2,6 +2,7 @@
 
 import sys
 import subprocess
+import time
 count = 0
 start = 0
 with open('./top-1m.csv', 'r') as fd:
@@ -10,11 +11,22 @@ with open('./top-1m.csv', 'r') as fd:
         rank,host = line.strip().split(',')
         if count < start:
             continue
-        cmd = "./sslfacts.sh {0} > tmp/{1:0>8d}-{0}.txt".format(host,int(rank))
+        t0 = time.time()
+
+        # try with WWW
+        newhost = host
+        if not host.startswith('www'):
+            newhost = 'www.' + host
+        cmd = "./sslfacts.sh {0} > tmp/{1:0>8d}-{2}.txt".format(newhost,int(rank),host)
         print cmd
         returncode = subprocess.call(cmd, shell=True)
-        if returncode != 0 and not host.startswith('www'):
-            newhost = 'www.' + host
-            cmd = "./sslfacts.sh {0}> tmp/{2:0>8d}-{1}.txt".format(newhost,host,int(rank))
+        if returncode != 0:
+            # try naked domain
+            cmd = "./sslfacts.sh {0} > tmp/{1:0>8d}-{0}.txt".format(host,int(rank))
             print cmd
-            returncode = subprocess.call(cmd, shell=True)
+            if returncode != 0:
+                cmd = "echo FAIL >>  tmp/{1:0>8d}-{2}.txt".format(int(rank), host)
+                subprocess.call(cmd, shell=True)
+                print "FAIL"
+        t1 = time.time()
+        print "{0} took {1}".format(host, t1-t0)
