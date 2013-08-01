@@ -19,7 +19,7 @@ with open('./top-1m.csv', 'r') as fd:
     for line in fd:
         count += 1
         rankstr,host = line.strip().split(',')
-        rank = int(rank)
+        rank = int(rankstr)
 
         if count < start:
             continue
