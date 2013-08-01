@@ -104,6 +104,11 @@ function sslfact_protocol_tls_v12 {
     fi
     sslfact_add "protocol-tls-v12: ${ACTUAL}"
     sslfact_add "protocol-tls-v12-default: ${cipher}"
+
+    if [ "$ACTUAL" = "on" ] ; then
+        sslfact_cipher_suites_tls12_common
+        sslfact_cipher_suites_tls12_strange
+    fi
 }
 
 function sslfact_protocol_tls_v11 {
@@ -171,15 +176,51 @@ function sslfact_tls12_suite_allowed_on_tls10 {
 }
 
 
-function sslfact_cipher_suites {
+function sslfact_cipher_suites_all {
     OPENSSLSUITES=`${OPENSSL} ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
-    for CIPHER in $OPENSSLSUITES; do
+    sslfact_cipher_suites $OPENSSLSUITES
+}
+
+function sslfact_cipher_suites_tls12_strange {
+    SUITES="`${OPENSSL} ciphers -v ALL | grep 1.2 | grep -E 'ECDSA|ADH|ECDH-' | awk '{ print $1 }' | sort -u`"
+    TAGS="`echo ${SUITES} | tr \"\\n\" ':'`"
+    echo $URLPATH | ${OPENSSL} s_client -cipher '${TAGS}' -connect $HOSTPORT 2> /dev/null > /dev/null
+    if [ "$?" -eq "0" ]; then
+        sslfact_cipher_suites $SUITES
+    fi
+}
+
+function sslfact_cipher_suites_tls12_common {
+    SUITES="`${OPENSSL} ciphers -v ALL | grep 1.2 | grep -v -E 'ECDSA|ADH|ECDH-' | awk '{ print $1 }' | sort -u`"
+    sslfact_cipher_suites $SUITES
+}
+
+function sslfact_cipher_suites_sslv3_strange {
+    # get seldom used ciphers
+    TAGS='DSS:SRP:PSK:NULL:ADH:AECDH:ECDSA'
+    echo $URLPATH | ${OPENSSL} s_client -cipher '${TAGS}' -connect $HOSTPORT 2> /dev/null > /dev/null
+    if [ "$?" -eq "0" ]; then
+        SUITES=`${OPENSSL} ciphers -v '${TAGS}' | grep -v 1.2 | awk '{ print $1 }' | sort -u`
+        sslfact_cipher_suites $SUITES
+    fi
+}
+
+function sslfact_cipher_suites_sslv3_common {
+    # get seldom used ciphers
+    COMMON="`${OPENSSL} ciphers -v 'ALL:!DSS:!SRP:!PSK:!NULL:!ADH:!AECDH:!ECDSA' | grep -v 1.2 | awk '{ print $1 }' | sort -u`"
+    sslfact_cipher_suites $COMMON
+}
+
+function sslfact_cipher_suites {
+    while (( "$#" )); do
+        CIPHER=$1
         echo $URLPATH | ${OPENSSL} s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
         if [ "$?" -eq "0" ]; then
             sslfact_add "cipher-suite-${CIPHER}: on"
         else
             sslfact_add "cipher-suite-${CIPHER}: off"
         fi
+        shift
     done
 }
 
@@ -329,7 +370,14 @@ function sslassert_init {
     if [ "$?" -eq "1" ]; then
         return $SSLASSERT_EXIT
     fi
-    sslfact_cipher_suites
+    sslfact_protocol_tls_v12
+    sslfact_protocol_tls_v11
+    sslfact_protocol_tls_v10
+    sslfact_protocol_ssl_v3
+    sslfact_protocol_ssl_v2
+    sslfact_cipher_suites_sslv3_common
+    sslfact_cipher_suites_sslv3_strange
+
     sslfact_crypto_weak
     sslfact_crypto_null
     sslfact_crypto_adh
@@ -351,11 +399,6 @@ function sslassert_init {
     sslfact_certificate_chain_length
     sslfact_secure_renegotiation
     sslfact_compression
-    sslfact_protocol_tls_v12
-    sslfact_protocol_tls_v11
-    sslfact_protocol_tls_v10
-    sslfact_protocol_ssl_v2
-    sslfact_protocol_ssl_v3
     sslfact_tls12_suite_allowed_on_tls10
     sslfact_beast_attack
 }
