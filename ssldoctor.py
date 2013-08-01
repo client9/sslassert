@@ -57,7 +57,9 @@ OPENSSLTOKENS = set([
     'GOST94',
     'GOST89MAC',
 # NOT DOCUMENTED
-    'EDH'
+    'EDH',
+    'ECDSA',
+    'AECDH'
 ])
 
 MSG = {
