@@ -10,7 +10,7 @@ source ./sslassert.sh
 
 echo ""
 sslassert "protocol-ssl-v2            = off"
-sslassert "protocol-ssl-v3            = off"
+sslassert "protocol-ssl-v3            = on"
 sslassert "protocol-tls-v10           = on"
 sslassert "protocol-tls-v11           = on"
 sslassert "protocol-tls-v12           = on"
@@ -18,15 +18,21 @@ sslassert 'protocol-tls12-suite-allowed-on-tls10 = off'
 sslassert "compression                = off"
 sslassert "certificate-chain-length -gt 1"
 sslassert "self-signed-certificates-in-chain = off"
-sslassert "crypto-suite-count                     -eq 16"
+sslassert "crypto-suite-count                     -eq 22"
 sslassert "cipher-suite-ECDHE-RSA-AES128-GCM-SHA256 = on"
 sslassert "cipher-suite-ECDHE-RSA-AES256-GCM-SHA384 = on"
+sslassert "cipher-suite-DHE-RSA-AES128-GCM-SHA256   = on"
+sslassert "cipher-suite-DHE-RSA-AES256-GCM-SHA384   = on"
 sslassert "cipher-suite-ECDHE-RSA-AES128-SHA256     = on"
 sslassert "cipher-suite-ECDHE-RSA-AES256-SHA384     = on"
+sslassert "cipher-suite-DHE-RSA-AES128-SHA256       = on"
+sslassert "cipher-suite-DHE-RSA-AES256-SHA256       = on"
 sslassert "cipher-suite-ECDHE-RSA-RC4-SHA           = on"
 
 sslassert "cipher-suite-ECDHE-RSA-AES128-SHA        = on"
 sslassert "cipher-suite-ECDHE-RSA-AES256-SHA        = on"
+sslassert "cipher-suite-DHE-RSA-AES128-SHA          = on"
+sslassert "cipher-suite-DHE-RSA-AES256-SHA          = on"
 sslassert "cipher-suite-ECDHE-RSA-DES-CBC3-SHA      = on"
 
 sslassert "cipher-suite-AES128-GCM-SHA256           = on"
@@ -53,5 +59,5 @@ sslassert "beast-attack               = off"
 echo ""
 #echo "$SSLFACTS"
 
-exit $SSLFACTS_EXIT
+exit $SSLASSERT_EXIT
 
