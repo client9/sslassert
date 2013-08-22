@@ -28,11 +28,6 @@ function sslfact_add {
 ${FACT}"
 }
 
-function sslfact_certificate_length {
-    bits=`echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -E 'Server public key is ([0-9]+) bit' |  awk '{ print $5 }'`
-    sslfact_add "certificate-length: $bits"
-}
-
 function sslfact_smoke_test {
     output=`echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2>&1`
     if [ "$?" -eq "0" ]; then
@@ -46,9 +41,27 @@ function sslfact_smoke_test {
     fi
 }
 
-function sslfact_certificate_common_name {
-    output=`echo "/" | openssl s_client -connect $HOSTPORT 2> /dev/null | grep 'CN' | head -1 | awk -F '=' '{ x = split($0,a); printf a[x]; }'`
+function sslfact_certificate_facts {
+    CERT=`echo / | ${OPENSSL} s_client -connect ${HOSTPORT} 2>/dev/null | awk '/-----BEGIN CERTIFICATE-----/,/----END CERTIFICATE-----/'`
+
+    CHECKSUM=`echo "$CERT" | ${OPENSSL} dgst -sha1 | awk {'print $2'}`
+    sslfact_add "certificate-checksum: ${CHECKSUM}"
+
+    output=`echo "$CERT" | ${OPENSSL} x509 -noout -subject | awk -F '=' '{ x = split($0,a); printf a[x]; }'`
     sslfact_add "certificate-common-name: ${output}"
+
+    output=`echo "$CERT" | ${OPENSSL} x509 -noout -modulus | awk -F '=' '{ print length($2)*4 }'`
+    sslfact_add "certificate-length: ${output}"
+
+    echo "$CERT" | ${OPENSSL} x509 -noout -checkend 2592000
+    if [ "$?" -eq "0" ]; then
+        ACTUAL="off"
+    else
+        ACTUAL="on"
+    fi
+    sslfact_add "certificate-expires-in-30-days: $ACTUAL"
+
+
 }
 
 function sslfact_certificate_chain_self_signed {
@@ -375,8 +388,8 @@ function sslassert_init {
     if [ "$?" -eq "1" ]; then
         return $SSLASSERT_EXIT
     fi
-    sslfact_certificate_common_name
-    sslfact_certificate_length
+
+    sslfact_certificate_facts
     sslfact_certificate_chain_length
     sslfact_certificate_chain_self_signed
 
