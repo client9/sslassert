@@ -16,19 +16,6 @@ echo ""
 #openssl ciphers -v "${SUITES}" | sort
 }
 
-GREP=""
-function suites2 {
-TAG=$1
-if [ "$GREP" = "" ]; then
-   GREP="$TAG"
-else
-   GREP="${GREP}|${TAG}"
-fi
-echo `${OPENSSL} ciphers -v "${SUITES}" | grep -v -E "${GREP}" | wc -l` $SUITES "| grep -v -E $GREP"
-echo ""
-}
-
-
 echo "The default set of cipher suites."
 suites "ALL"
 
@@ -81,22 +68,10 @@ suites '!DSS'
 echo "Removing Au-ECDSA-, it requires a special certificate that you don't have"
 suites '!ECDSA'
 
-echo "Unfortunately, this as far as we can go using the OpenSSL tokens."
-echo "Need to grep out what we want"
-
-
 echo "Removing ECDH-, not needed as ECDHE is likely a better choice if using DH"
-suites2 'ECDH-'
+suites '!kECDH'
 
-
-
-#echo "Removing oddsball ECDHE-RSA-DES-CBC3-SHA."
-#echo "I'm not sure how it would ever be selected, or what client would make them"
-#echo "a preference."
-#suites2 ECDHE-RSA-DES-CBC3-SHA
-
-${OPENSSL} ciphers -v "${SUITES}" | grep -v -E "${GREP}" | sort
-
+${OPENSSL} ciphers -v "${SUITES}" | sort
 
 echo ""
 echo "Google uses the same set, plus RC4-MD5 (why?)"
