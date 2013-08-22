@@ -29,6 +29,16 @@ ${FACT}"
 }
 
 function sslfact_smoke_test {
+    sslfact_add "openssl-command: ${OPENSSL}"
+    sslfact_add "openssl-target: https://${HOSTPORT}${URLPATH}"
+    VERSION=$(${OPENSSL} version)
+    if [ "$?" -eq "0" ]; then
+        sslfact_add "openssl-version: $VERSION"
+    else
+        sslfact_add "openssl-version: $VERSION"
+        SSLASSERT_EXIT=1;
+        return 1
+    fi
     output=`echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2>&1`
     if [ "$?" -eq "0" ]; then
         ACTUAL='on'
@@ -53,14 +63,26 @@ function sslfact_certificate_facts {
     output=`echo "$CERT" | ${OPENSSL} x509 -noout -modulus | awk -F '=' '{ print length($2)*4 }'`
     sslfact_add "certificate-length: ${output}"
 
-    echo "$CERT" | ${OPENSSL} x509 -noout -checkend 2592000
-    if [ "$?" -eq "0" ]; then
-        ACTUAL="off"
-    else
-        ACTUAL="on"
-    fi
-    sslfact_add "certificate-expires-in-30-days: $ACTUAL"
+    #
+    # compute days till expiration
+    #
 
+    # works in both BSD and Linux
+    now=`date +%s`
+
+    # cert end date format is in this gross format
+    # does not appear to use local information
+    # May  8 11:58:41 2014 GMT
+    FMT='%b %d %H:%M:%S %Y %Z'
+
+    # text
+    expire=`echo "$CERT" | ${OPENSSL} x509 -noout -enddate | awk -F '=' '{ print $2 }'`
+    #echo $expire
+    # LANG C is required.. try BSD, then linux
+    seconds=`LANG=C date -j -f "${FMT}" "${expire}" +%s || LANG=C date --date="$expire" +%s`
+    seconds=$(expr ${seconds} - ${now})
+    days=$(expr ${seconds} / 86400)
+    sslfact_add "certificate-days-until-expiration: $days"
 
 }
 
@@ -423,5 +445,6 @@ function sslassert_init {
     sslfact_tls12_suite_allowed_on_tls10
     sslfact_beast_attack
 }
+
 sslassert_init
 
