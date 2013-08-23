@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+"""
+Fast fact generation and assertions for SSL/TLS (https) servers
+https://github.com/client9/sslassert
+"""
+
 import subprocess
 import datetime
 
