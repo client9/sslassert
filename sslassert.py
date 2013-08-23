@@ -137,16 +137,16 @@ class sslassert(object):
         'ECDHE-ECDSA-AES256-SHA384'
     )
 
-    def __init__(self, openssl=None):
+    def __init__(self, opensslexe=None):
         self.facts = {}
         self.path = '/'
         self.hostport = 'localhost'
         if ':' not in self.hostport:
             self.hostport += ':443'
-        if openssl is None:
+        if opensslexe is None:
             self.openssl = ['openssl',]
         else:
-            self.openssl = openssl
+            self.openssl = opensslexe
 
     def connect(self, *args):
         cmd = self.openssl[:]
@@ -172,6 +172,7 @@ class sslassert(object):
 
     def add_fact(self, key, value):
         logging.debug("{0} = {1}".format(key.lower(),value))
+        #print "{0} = {1}".format(key.lower(),value)
         self.facts[key.lower()] = value
 
     def get_fact(self, key, default=None):
@@ -204,10 +205,10 @@ class sslassert(object):
         self.add_fact('openssl-rc4-cipher', rc4)
         self.add_fact('openssl-TLSv1.2', tls12)
         self.add_fact('openssl-target', 'https://' + self.hostport + self.path)
-    def certificate(self):
+
         (code, stdout, stderr) = self.connect()
         if code != 0:
-            self.add_fact('openssl-connect', stderr)
+            self.add_fact('openssl-connect', stderr.split("\n")[0].strip())
             return 1
         else:
             self.add_fact('openssl-connect', True)
@@ -246,7 +247,7 @@ class sslassert(object):
         datenow = datetime.datetime.now()
         dateexp = datetime.datetime.strptime(datestr, '%b %d %H:%M:%S %Y %Z')
         self.add_fact('certificate-days-till-expiration', (dateexp-datenow).days)
-
+        return 0
 
     def protocol_tls12(self):
         (code, stdout, stderr) = self.connect('-tls1_2')
@@ -361,8 +362,7 @@ class sslassert(object):
         self.hostport = host
         self.path = '/'
 
-        self.smoke()
-        if self.certificate() == 1:
+        if self.smoke() == 1:
             return
         self.protocol_tls12()
         self.protocol_tls11()
@@ -384,8 +384,8 @@ if __name__ == '__main__':
         target += ':443'
 
     import json
-    sf = sslassert(target, openssl = ['timeout', '10', 'openssl'])
-    sf.test()
+    sf = sslassert(['timeout', '10', 'openssl'])
+    sf.test(target)
 
     sys.exit(0)
     print '----'
