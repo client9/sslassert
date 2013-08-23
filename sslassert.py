@@ -6,6 +6,7 @@ https://github.com/client9/sslassert
 """
 
 import subprocess
+import logging
 import datetime
 
 class sslassert(object):
@@ -136,10 +137,10 @@ class sslassert(object):
         'ECDHE-ECDSA-AES256-SHA384'
     )
 
-    def __init__(self, hostport, path='/', openssl=None):
+    def __init__(self, openssl=None):
         self.facts = {}
-        self.path = path
-        self.hostport = hostport
+        self.path = '/'
+        self.hostport = 'localhost'
         if ':' not in self.hostport:
             self.hostport += ':443'
         if openssl is None:
@@ -170,7 +171,7 @@ class sslassert(object):
         return stdout.split(':')
 
     def add_fact(self, key, value):
-        print "{0} = {1}".format(key.lower(),value)
+        logging.debug("{0} = {1}".format(key.lower(),value))
         self.facts[key.lower()] = value
 
     def get_fact(self, key, default=None):
@@ -202,7 +203,7 @@ class sslassert(object):
         self.add_fact('openssl-elliptic-curve', ecc)
         self.add_fact('openssl-rc4-cipher', rc4)
         self.add_fact('openssl-TLSv1.2', tls12)
-
+        self.add_fact('openssl-target', 'https://' + self.hostport + self.path)
     def certificate(self):
         (code, stdout, stderr) = self.connect()
         if code != 0:
@@ -353,7 +354,13 @@ class sslassert(object):
             result = fn(actual, expected)
             print "{4} {0} = {1} {2} {3}".format(key, actual, op, expected, result and "PASS" or "FAIL")
 
-    def test(self):
+    def test(self, host, path='/'):
+        self.facts = {}
+        if ':' not in host:
+            host += ':443'
+        self.hostport = host
+        self.path = '/'
+
         self.smoke()
         if self.certificate() == 1:
             return
