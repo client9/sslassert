@@ -6,10 +6,11 @@ export HOSTPORT=www.google.com
 export URLPATH=/
 
 source ./sslassert.sh
+sslassert_init
 
 sslassert 'secure-renegotiation               = on'
 sslassert 'compression                        = off'
-sslassert 'certificate-length                 = 1024'
+sslassert 'certificate-length              -eq 1024'
 sslassert 'protocol-ssl-v2                    = off'
 sslassert 'protocol-ssl-v3                    = on'
 sslassert 'protocol-tls-v10                   = on'

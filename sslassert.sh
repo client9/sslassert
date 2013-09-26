@@ -1,25 +1,10 @@
 #!/bin/sh
 
 #
-# defaults
+# See https://github.com/client9/sslassert
 #
-if [ "$OPENSSL" = "" ]; then
-    export OPENSSL="openssl"
-fi
-
-if [ "$URLPATH" = "" ]; then
-    export URLPATH=/
-fi
-
-if [[ "$HOSTPORT" != *:* ]]; then
-    export HOSTPORT="${HOSTPORT}:443"
-fi
-
-export SSLFACTS=""
-export SSLASSERT_EXIT=0
-
-
-function sslfact_add {
+#
+sslfact_add() {
     FACT=$1
     if [ "$SSLASSERT_DEBUG" != "" ]; then
         echo $FACT 2>&1
@@ -28,14 +13,14 @@ function sslfact_add {
 ${FACT}"
 }
 
-function sslfact_smoke_test {
+sslfact_smoke_test() {
     sslfact_add "openssl-command: ${OPENSSL}"
     sslfact_add "openssl-target: https://${HOSTPORT}${URLPATH}"
     VERSION=$(${OPENSSL} version)
     if [ "$?" -eq "0" ]; then
-        sslfact_add "openssl-version: $VERSION"
+        sslfact_add "openssl-version: '$VERSION'"
     else
-        sslfact_add "openssl-version: $VERSION"
+        sslfact_add "openssl-version: '$VERSION'"
         SSLASSERT_EXIT=1;
         return 1
     fi
@@ -51,7 +36,7 @@ function sslfact_smoke_test {
     fi
 }
 
-function sslfact_certificate_facts {
+sslfact_certificate_facts() {
     CERT=`echo / | ${OPENSSL} s_client -connect ${HOSTPORT} 2>/dev/null | awk '/-----BEGIN CERTIFICATE-----/,/----END CERTIFICATE-----/'`
 
     CHECKSUM=`echo "$CERT" | ${OPENSSL} dgst -sha1 | awk {'print $2'}`
@@ -86,7 +71,7 @@ function sslfact_certificate_facts {
 
 }
 
-function sslfact_certificate_chain_self_signed {
+sslfact_certificate_chain_self_signed() {
     echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'self signed certificate in certificate chain'
     if [ "$?" -eq "0" ]; then
         ACTUAL="on"
@@ -96,12 +81,12 @@ function sslfact_certificate_chain_self_signed {
     sslfact_add "certificate-chain-self-signed: $ACTUAL"
 }
 
-function sslfact_certificate_chain_length {
+sslfact_certificate_chain_length() {
     numcerts=`echo $URLPATH | ${OPENSSL} s_client -showcerts -connect $HOSTPORT 2> /dev/null | grep 'BEGIN CERTIFICATE' | wc -l | tr -d ' '`
     sslfact_add "certificate-chain-length: $numcerts"
 }
 
-function sslfact_secure_renegotiation {
+sslfact_secure_renegotiation() {
     echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Secure Renegotiation IS supported'
     # grep $? is
     #     0     One or more lines were selected.
@@ -117,7 +102,7 @@ function sslfact_secure_renegotiation {
 }
 
 
-function sslfact_compression {
+sslfact_compression() {
     EXPECTED=$1
 
     echo $URLPATH | ${OPENSSL} s_client -connect $HOSTPORT 2> /dev/null | grep -i -q 'Compression: NONE'
@@ -135,7 +120,7 @@ function sslfact_compression {
     sslfact_add "compression: ${ACTUAL}"
 }
 
-function sslfact_protocol_tls_v12 {
+sslfact_protocol_tls_v12() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1_2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -151,7 +136,7 @@ function sslfact_protocol_tls_v12 {
     fi
 }
 
-function sslfact_protocol_tls_v11 {
+sslfact_protocol_tls_v11() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1_1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -162,7 +147,7 @@ function sslfact_protocol_tls_v11 {
     sslfact_add "protocol-tls-v11-default: ${cipher}"
 }
 
-function sslfact_protocol_tls_v10 {
+sslfact_protocol_tls_v10() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -173,7 +158,7 @@ function sslfact_protocol_tls_v10 {
     sslfact_add "protocol-tls-v10-default: ${cipher}"
 }
 
-function sslfact_protocol_ssl_v3 {
+sslfact_protocol_ssl_v3() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -ssl3 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -184,7 +169,7 @@ function sslfact_protocol_ssl_v3 {
     sslfact_add "protocol-ssl-v3-default: ${cipher}"
 }
 
-function sslfact_protocol_ssl_v2 {
+sslfact_protocol_ssl_v2() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -ssl2 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -205,7 +190,7 @@ function sslfact_protocol_ssl_v2 {
 #
 # This should be OFF
 #
-function sslfact_tls12_suite_allowed_on_tls10 {
+sslfact_tls12_suite_allowed_on_tls10() {
     cipher=`echo $URLPATH | ${OPENSSL} s_client -tls1 -cipher AES128-SHA256 -connect $HOSTPORT 2> /dev/null | awk -F ': *' '/Cipher.*:/ { print $2 }'`
     if [ "$cipher" = "0000" ]; then
         ACTUAL="off"
@@ -216,12 +201,12 @@ function sslfact_tls12_suite_allowed_on_tls10 {
 }
 
 
-function sslfact_cipher_suites_all {
+sslfact_cipher_suites_all() {
     OPENSSLSUITES=`${OPENSSL} ciphers -v ALL:COMPLEMENTOFALL | awk '{ print $1 }' | sort -u`
     sslfact_cipher_suites $OPENSSLSUITES
 }
 
-function sslfact_cipher_suites_tls12_strange {
+sslfact_cipher_suites_tls12_strange() {
     SUITES="`${OPENSSL} ciphers -v ALL | grep 1.2 | grep -E 'ECDSA|ADH|ECDH-' | awk '{ print $1 }' | sort -u`"
     TAGS="`echo ${SUITES} | tr \"\\n\" ':'`"
     echo $URLPATH | ${OPENSSL} s_client -cipher '${TAGS}' -connect $HOSTPORT 2> /dev/null > /dev/null
@@ -230,12 +215,12 @@ function sslfact_cipher_suites_tls12_strange {
     fi
 }
 
-function sslfact_cipher_suites_tls12_common {
+sslfact_cipher_suites_tls12_common() {
     SUITES="`${OPENSSL} ciphers -v ALL | grep 1.2 | grep -v -E 'ECDSA|ADH|ECDH-' | awk '{ print $1 }' | sort -u`"
     sslfact_cipher_suites $SUITES
 }
 
-function sslfact_cipher_suites_sslv3_strange {
+sslfact_cipher_suites_sslv3_strange() {
     # get seldom used ciphers
     TAGS='DSS:SRP:PSK:NULL:ADH:AECDH:ECDSA'
     echo $URLPATH | ${OPENSSL} s_client -cipher '${TAGS}' -connect $HOSTPORT 2> /dev/null > /dev/null
@@ -245,13 +230,13 @@ function sslfact_cipher_suites_sslv3_strange {
     fi
 }
 
-function sslfact_cipher_suites_sslv3_common {
+sslfact_cipher_suites_sslv3_common() {
     # get seldom used ciphers
     COMMON="`${OPENSSL} ciphers -v 'ALL:!DSS:!SRP:!PSK:!NULL:!ADH:!AECDH:!ECDSA' | grep -v 1.2 | awk '{ print $1 }' | sort -u`"
     sslfact_cipher_suites $COMMON
 }
 
-function sslfact_cipher_suites {
+sslfact_cipher_suites() {
     while (( "$#" )); do
         CIPHER=$1
         echo $URLPATH | ${OPENSSL} s_client -cipher ${CIPHER} -connect $HOSTPORT 2> /dev/null > /dev/null
@@ -264,7 +249,7 @@ function sslfact_cipher_suites {
     done
 }
 
-function has_cipher_suites {
+has_cipher_suites() {
     FNAME=$1
     COUNT=$2
     if [ "$COUNT" == "0" ]; then
@@ -275,90 +260,90 @@ function has_cipher_suites {
     sslfact_add "${FNAME}: ${ACTUAL}"
 }
 
-function sslfact_crypto_weak {
+sslfact_crypto_weak() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c -E 'EXP-|-DES-CBC-'`
     has_cipher_suites "crypto-weak" $COUNT
 }
 
-function sslfact_crypto_null {
+sslfact_crypto_null() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'NULL-'`
     has_cipher_suites "crypto-null" $COUNT
 }
 
-function sslfact_crypto_adh {
+sslfact_crypto_adh() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'ADH-'`
     has_cipher_suites "crypto-adh" $COUNT
 }
 
-function sslfact_crypto_aes {
+sslfact_crypto_aes() {
     # plain aes, no ecdhe- or dh-... aes
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep 'AES' | grep -c -v 'DHE`
     has_cipher_suites "crypto-aes" $COUNT
 }
 
-function sslfact_crypto_gcm {
+sslfact_crypto_gcm() {
     # plain aes, no ecdhe- or dh-... aes
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c 'GCM'`
     has_cipher_suites "crypto-gcm" $COUNT
 }
 
-function sslfact_crypto_idea {
+sslfact_crypto_idea() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite.*: on' | grep -c IDEA-`
     has_cipher_suites "crypto-idea" $COUNT
 }
 
-function sslfact_crypto_rc4 {
+sslfact_crypto_rc4() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c RC4`
     has_cipher_suites "crypto-rc4" $COUNT
 }
 
-function sslfact_crypto_tripledes {
+sslfact_crypto_tripledes() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c -E '3DES|CBC3'`
     has_cipher_suites "crypto-3des" $COUNT
 }
 
-function sslfact_crypto_camellia {
+sslfact_crypto_camellia() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c CAMELLIA`
     has_cipher_suites "crypto-camellia" $COUNT
 }
 
-function sslfact_crypto_md5 {
+sslfact_crypto_md5() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c MD5`
     has_cipher_suites 'crypto-md5' $COUNT
 }
 
-function sslfact_crypto_sha160 {
+sslfact_crypto_sha160() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep SHA | grep -c -v -E 'SHA256|SHA384|SHA512'`
     has_cipher_suites 'crypto-sha160' $COUNT
 }
 
-function sslfact_crypto_seed {
+sslfact_crypto_seed() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c SEED`
     has_cipher_suites 'crypto-seed' $COUNT
 }
 
-function sslfact_crypto_suite_count {
+sslfact_crypto_suite_count() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | wc -l | tr -d ' '`
     sslfact_add "crypto-suite-count: ${COUNT}"
 }
 
-function sslfact_crypto_forward_secrecy {
+sslfact_crypto_forward_secrecy() {
     # ignoring insecure DES based suites
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -E 'ECDHE|EDH-' | grep -c -v 'DES-CBC-'`
     has_cipher_suites 'crypto-forward-secrecy' $COUNT
 }
 
-function sslfact_crypto_ecdhe {
+sslfact_crypto_ecdhe() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -c  ECDHE`
     has_cipher_suites 'crypto-ecdhe' $COUNT
 }
 
-function sslfact_crypto_dhe {
+sslfact_crypto_dhe() {
     COUNT=`echo "$SSLFACTS" | grep -i 'cipher-suite-.*: on' | grep -v ECDHE | grep -c DHE`
     has_cipher_suites 'crypto-dhe' $COUNT
 }
 
-function sslfact_crypto_winxp {
+sslfact_crypto_winxp() {
     # technically RC4-SHA and RC4-MD5 are ok for Windows XP and IE <=8 too
     # however, WinXP can be put in FIPS compliance mode, which will eliminate
     # RC4-SHA, RC4-MD5.  This only leaves DES-CBC3-SHA  :-(
@@ -366,7 +351,7 @@ function sslfact_crypto_winxp {
     has_cipher_suites 'crypto-winxp-ie-compatible' $COUNT
 }
 
-function sslfact_beast_attack {
+sslfact_beast_attack() {
     BEAST=0
     echo "$SSLFACTS" | grep -i -q -E 'protocol-tls-v10-default:.*(RC4|0000)'
     if [ "$?" -eq 0 ]; then
@@ -384,7 +369,7 @@ function sslfact_beast_attack {
     sslfact_add "beast-attack: ${ACTUAL}"
 }
 
-function sslassert {
+sslassert() {
     read -r KEY OP EXPECTED <<< $1
 
     # take only first value
@@ -405,7 +390,25 @@ function sslassert {
     return 1
 }
 
-function sslassert_init {
+sslassert_init() {
+    #
+    # defaults
+    #
+    if [ "$OPENSSL" = "" ]; then
+        export OPENSSL="openssl"
+    fi
+
+    if [ "$URLPATH" = "" ]; then
+        export URLPATH=/
+    fi
+
+    if [[ "$HOSTPORT" != *:* ]]; then
+        export HOSTPORT="${HOSTPORT}:443"
+    fi
+
+    export SSLFACTS=""
+    export SSLASSERT_EXIT=0
+
     sslfact_smoke_test
     if [ "$?" -eq "1" ]; then
         return $SSLASSERT_EXIT
@@ -446,5 +449,11 @@ function sslassert_init {
     sslfact_beast_attack
 }
 
-sslassert_init
-
+#
+# If this is on command line do something
+#
+if [ "$#" = "1" ]; then
+    export SSLASSERT_DEBUG=1
+    export HOSTPORT="${1}"
+    sslassert_init
+fi

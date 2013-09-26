@@ -1,0 +1,219 @@
+<!DOCTYPE HTML>
+<HTML>
+<head>
+<title>Fact Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+<script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+
+var operators = {
+'==': function(x,y) { return x == y; },
+'is': function(x,y) { return x == y; },
+'is not': function(x,y) { return x != y; },
+'!=': function(x,y) { return x != y; },
+'<>': function(x,y) { return x != y; },
+'<=': function(x,y) { return x <= y; },
+'>=': function(x,y) { return x >= y; },
+'<' : function(x,y) { return x < y; },
+'>' : function(x,y) { return x > y; },
+'exists': function(x,y) { return x == null; }
+};
+
+function info_key(data, key, text) {
+    var html = '<tr><td>';
+    var ok = data[key]
+    if (ok) {
+       html += '<span class="label label-success">yes</span>';
+    } else {
+       html += '<span class="label label-warning">no</span>';
+    }
+    html += '</td>'
+    html += '<td style="font-family:monospace">' + text + '</td><td style="font-family:monospace">'
+    if (ok) {
+       html += ok;
+    } else {
+       html += '<i>none</i>';
+    }
+    html += '</td></tr>';
+    return html;
+}
+
+function http_header_report(data) {
+   var html = '<table>';
+   html += info_key(data, 'http_header_x-content-security-policy', 'X-Content-Security-Policy');
+   html += info_key(data, 'http_header_content-security-policy', 'Content-Security-Policy');
+   html += info_key(data, 'http_header_strict-transport-security', 'Strict-Transport-Security');
+   html += info_key(data, 'http_header_x-ua-compatible', 'X-UA-Compatible');
+   html += info_key(data, 'http_header_x-content-type-options', 'X-Content-Type-Options');
+   html += info_key(data, 'http_header_x-frame-options', 'X-Frame-Options');
+   html += info_key(data, 'http_header_x-xss-protection', 'X-XSS-Protection');
+   html += info_key(data, 'http_header_x-powered-by', 'X-Powered-By');
+   return html;
+}
+
+function assert(data, check) {
+    var html = '<table>';
+    var re = /\s+/;
+    $.each(check, function(index, value) {
+        var splits = value.split(re);
+        var expected = null
+        if (splits.length == 4) {
+            var key = splits[0];
+            var op = splits[1] + ' ' + splits[2];
+            expected = splits[3];
+        } else if (splits.length == 3) {
+            var key = splits[0];
+            var op = splits[1];
+            expected = splits[2];
+        } else if (splits.length == 2) {
+            var key = splits[0];
+            var op = splits[1];
+        }
+
+        if (expected == 'null') {
+            expected = null;
+        } else if (expected == 'True' || expected == 'true' || expected == 'TRUE') {
+            expected = true;
+        } else if (expected == 'False' || expected == 'false' || expected == 'FALSE') {
+            expected = false;
+        }
+        var ok = operators[op](data[key], expected);
+
+        html += '<tr>';
+        html += '<td>';
+        if (ok) {
+           html += '<span class="label label-success">Pass</span>';
+        } else {
+           html += '<span class="label label-warning">Fail</span>';
+        }
+        html += '</td>';
+        html += '<td>' + key + '</td>';
+        html += '<td>' + data[key] + ' ' + op + ' ' + expected + '</td>';
+        //html += '<td>' + op + '</td>';
+        //html += '<td>' + expected + '</td>';
+        html += '</tr>';
+    });
+    html += '</table>';
+    return html;
+}
+
+
+function report_facts(data) {
+       var html = '<table>';
+       $.each(data, function( index, value) {
+           html += '<tr><td>' + index + '</td><td>' + value + '</td></tr>';
+      });
+      return html;
+}
+
+function assert_ssl_basics(data) {
+    var asserts = [
+       'ssl_certificate_length > 1024',
+       'ssl_certificate_chain-self-signed is False',
+       'ssl_certificate_days-till-expiration > 0',
+       'ssl_certificate_chain-length > 1',
+       'ssl_protocol_tls12    is not null',
+       'ssl_protocol_tls11    is not null',
+       'ssl_protocol_tls10    is not null',
+       'ssl_protocol_ssl3     is not null',
+       'ssl_protocol_ssl2     is null',
+       'ssl_algorithm_null    is null',
+       'ssl_algoirthm_rc2     is null',
+       'ssl_algorithm_export  is null',
+       'ssl_algorithm_des     is null',
+       'ssl_algorithm_aecdh   is null',
+       'ssl_algorithm_adh     is null'
+        ];
+    html = assert(data, asserts);
+    html += '<hr/>';
+    html += report_facts(data);
+    return html
+}
+
+var reports = {
+   'http_facts': {
+          'generate': 'http',
+          'analyze': null,
+          'report': report_facts
+          },
+   'ssl_facts': {
+          'generate': 'ssl',
+          'analyze': null,
+          'report': report_facts
+          },
+   'ssh_facts': {
+          'generate': 'ssh',
+          'analyze': null,
+          'report': report_facts
+          },
+   'port_facts': {
+          'generate': 'ports',
+          'analyze': null,
+          'report': report_facts
+          },
+   'dns_facts': {
+          'generate': 'dns',
+          'analyze': null,
+          'report': report_facts
+          },
+   'ssl_basics': {
+          'generate': 'ssl',
+          'analyze': null,
+          'report': assert_ssl_basics
+    },
+    'http_headers': {
+          'generate': 'http',
+          'analyze': null,
+          'report': http_header_report
+    },
+    'wordpress_facts': {
+          'generate': 'wordpress',
+          'analyze': null,
+          'report': report_facts
+    }
+}
+
+$(document).ready(function() {
+$('#form').submit(function() {
+$("#facts").html('<div class="progress progress-striped active"><div class="bar" style="width:100%;"></div>');
+var report = $("#report").val();
+var engine = reports[report]['generate'];
+var url = $("#url").val();
+
+$.ajax({
+    url: "/facts/" + engine + "/" + url
+}).done(
+    function(data) {
+        $("#facts").html(reports[report]['report'](data));
+    }
+);
+return false;
+})  // submit
+}); // on ready
+</script>
+</head>
+<body>
+<div class="container">
+<h1>Fact Test</h1>
+<form id="form">
+<input id="url" type="text" width="20" />
+
+<select id="report">
+<option value="http_facts" selected>HTTP Facts</option>
+<option value="ssl_facts" >SSL Facts</option>
+<option value="ssh_facts" >SSH Facts</option>
+<option value="dns_facts" >DNS Facts</option>
+<option value="port_facts" >Port Facts</option>
+<option value="wordpress_facts" >Wordpress Facts</option>
+<option value="ssl_basics" >SSL Basics</option>
+<option value="http_headers" >HTTP Security Headers</option>
+</select>
+
+<input type="submit" value="Facts" />
+</form>
+<hr/>
+<div id="facts"></div>
+</div>
+</body>
+</html>
