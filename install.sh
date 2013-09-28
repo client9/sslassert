@@ -6,10 +6,10 @@ pip install lxml
 pip install requests
 
 if [ ! -d /usr/local/sslassert ]; then
-    mkdir /usr/local/sslassert
+    ( cd /usr/local; git clone https://github.com/client9/sslassert.git )
+else
+    ( cd /usr/local/sslassert; git pull )
 fi
-
-cp -f -r * /usr/local/sslassert/
 
 if [ ! -d /etc/service/sslassert/ ]; then
     mkdir /etc/service/sslassert/
