@@ -10,25 +10,23 @@ import base64
 import subprocess
 import logging
 import datetime
+import time
 
-from OpenSSL import crypto
+import ct.crypto.cert
 
+#from OpenSSL import crypto
+#from pyasn1_modules import rfc2459
+#from Crypto.Util import asn1
+#import pyasn1.error
+#from pyasn1.type import univ, tag
+#from pyasn1.codec.der import decoder as der_decoder
 
-from pyasn1_modules import rfc2459
-
-from Crypto.Util import asn1
-import pyasn1.error
-from pyasn1.type import univ, tag
-from pyasn1.codec.der import decoder as der_decoder
-
-oids = {
-'1.3.6.1.5.5.7.3.1': 'id-kp-serverAuth ',
-'1.3.6.1.5.5.7.3.2': 'id-kp-clientAuth',
-'1.3.6.1.5.5.7.48.1': 'OCSP',
-'1.3.6.1.5.5.7.48.2': 'id-ad-caIssuers',
-}
-
-
+#oids = {
+#'1.3.6.1.5.5.7.3.1': 'id-kp-serverAuth ',
+#'1.3.6.1.5.5.7.3.2': 'id-kp-clientAuth',
+#'1.3.6.1.5.5.7.48.1': 'OCSP',
+#'1.3.6.1.5.5.7.48.2': 'id-ad-caIssuers',
+#}
 
 class sslassert(object):
 
@@ -271,17 +269,39 @@ class sslassert(object):
                 substrate = substrate + base64.b64decode(line)
 
 
-        cert = der_decoder.decode(substrate, asn1Spec=rfc2459.Certificate)[0]
-        print cert.prettyPrint()
+        cert = ct.crypto.cert.Certificate(substrate)
+        self.add_fact('ssl_certificate_subject-common-name', cert.subject_common_name())
+        self.add_fact('ssl_certificate_subject-name', cert.subject_name())
+        self.add_fact('ssl_certificate_issuer-name', cert.issuer_name())
+        self.add_fact('ssl_certificate_version', cert.version())
 
+        val = time.mktime(cert.not_before())
+        days = (time.time() - val) / 86400.0
+        self.add_fact('ssl_certificate_not-before', int(val))
+        self.add_fact('ssl_certificate_days-since-start', int(days))
 
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, certtxt)
+        val = time.mktime(cert.not_after())
+        days = (val - time.time()) / 86400.0
+        self.add_fact('ssl_certificate_not-after', int(val))
+        self.add_fact('ssl_certificate_days-until-end', int(days))
+        self.add_fact('ssl_certificate_serial-number', str(cert.serial_number()))
 
-        self.add_fact('ssl_certificate_serial-number', cert.get_serial_number())
-        self.add_fact('ssl_certificate_version', cert.get_version())
+        san = cert.subject_alternative_names()
+        val = [ part.value() for part in san ]
+        self.add_fact('ssl_certificate_subject-alternative-name', ','.join(val))
 
-        self.add_fact('ssl_certificate_extentions-count', cert.get_extension_count())
-        for i in range(cert.get_extension_count()):
+        junk = cert.authority_info_access()
+        for oid_val, url_val in junk:
+            self.add_fact('ssl_certificate_authorityinfoaccess_' + oid_val.short_name().lower(), url_val.value())
+
+        #cert = crypto.load_certificate(crypto.FILETYPE_PEM, certtxt)
+
+        #self.add_fact('ssl_certificate_serial-number', cert.get_serial_number())
+        #self.add_fact('ssl_certificate_version', cert.get_version())
+
+        #self.add_fact('ssl_certificate_extentions-count', cert.get_extension_count())
+        if False:
+            #for i in range(cert.get_extension_count()):
             ext = cert.get_extension(i)
             shortname = ext.get_short_name().lower()
             rawdata = ext.get_data()
@@ -312,7 +332,7 @@ class sslassert(object):
                     #print oids[str(part[0])], part[1].getComponentByPosition(6)
                     self.add_fact('ssl_certificate_extention_authorityinfoaccess_' + oids[str(part[0])],
                                   part[1].getComponentByPosition(6))
-                continue
+                #continue
             elif shortname == 'basicconstraintsx':
                 data = der_decoder.decode(rawdata, asn1Spec=rfc2459.BasicConstraints())
             elif shortname == 'extendedkeyusage':
@@ -332,36 +352,37 @@ class sslassert(object):
 
             self.add_fact('ssl_certificate_extention_' + shortname, data)
 
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-fingerprint'], certtxt)
-        self.add_fact('ssl_certificate_fingerprint', stdout.strip().split('=')[1])
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-subject'], certtxt)
-        idx = stdout.find('CN=')
-        if idx > 0:
-            self.add_fact('ssl_certificate_common-name', stdout[idx+3:].strip())
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-fingerprint'], certtxt)
+        #self.add_fact('ssl_certificate_fingerprint', stdout.strip().split('=')[1])
 
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-ocsp_uri'], certtxt)
-        parts = stdout.strip()
-        if len(parts) == 0:
-            parts = None
-        self.add_fact('ssl_certificate_oscp-uri', parts)
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-subject'], certtxt)
+        #idx = stdout.find('CN=')
+        #if idx > 0:
+        #    self.add_fact('ssl_certificate_common-name', stdout[idx+3:].strip())
 
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-ocspid'], certtxt)
-        parts = stdout.strip()
-        if len(parts) == 0:
-            parts = None
-        self.add_fact('ssl_certificate_oscp-id', parts)
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-ocsp_uri'], certtxt)
+        #parts = stdout.strip()
+        #if len(parts) == 0:
+        #    parts = None
+        #self.add_fact('ssl_certificate_oscp-uri', parts)
 
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-startdate'], certtxt)
-        datestr = stdout.strip().split('=')[1]
-        datenow = datetime.datetime.now()
-        dateexp = datetime.datetime.strptime(datestr, '%b %d %H:%M:%S %Y %Z')
-        self.add_fact('ssl_certificate_days-since-expiration', (datenow - dateexp).days)
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-ocspid'], certtxt)
+        #parts = stdout.strip()
+        #if len(parts) == 0:
+        #    parts = None
+        #self.add_fact('ssl_certificate_oscp-id', parts)
 
-        (code, stdout, stderr) = self.doit(['x509', '-noout', '-enddate'], certtxt)
-        datestr = stdout.strip().split('=')[1]
-        datenow = datetime.datetime.now()
-        dateexp = datetime.datetime.strptime(datestr, '%b %d %H:%M:%S %Y %Z')
-        self.add_fact('ssl_certificate_days-till-expiration', (dateexp-datenow).days)
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-startdate'], certtxt)
+        #datestr = stdout.strip().split('=')[1]
+        #datenow = datetime.datetime.now()
+        #dateexp = datetime.datetime.strptime(datestr, '%b %d %H:%M:%S %Y %Z')
+        #self.add_fact('ssl_certificate_days-since-expiration', (datenow - dateexp).days)
+
+        #(code, stdout, stderr) = self.doit(['x509', '-noout', '-enddate'], certtxt)
+        #datestr = stdout.strip().split('=')[1]
+        #datenow = datetime.datetime.now()
+        #dateexp = datetime.datetime.strptime(datestr, '%b %d %H:%M:%S %Y %Z')
+        #self.add_fact('ssl_certificate_days-till-expiration', (dateexp-datenow).days)
         return 0
 
     def protocol_tls12(self):
