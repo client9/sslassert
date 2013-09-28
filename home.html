@@ -111,7 +111,10 @@ function assert_ssl_basics(data) {
     var asserts = [
        'ssl_certificate_length > 1024',
        'ssl_certificate_chain-self-signed is False',
-       'ssl_certificate_days-till-expiration > 0',
+       'ssl_certificate_days-since-start > 0',
+       'ssl_certificate_days-until-end > 0',
+       'ssl_certificate_authorityinfoaccess_oscp is not null',
+       'ssl_certificate_subject-alternative-name is not null',
        'ssl_certificate_chain-length > 1',
        'ssl_protocol_tls12    is not null',
        'ssl_protocol_tls11    is not null',
